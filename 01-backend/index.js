@@ -27,14 +27,24 @@ app.get("/api/notes", (request, response) => {
   });
 });
 
-app.get("/api/notes/:id", (request, response) => {
+app.get("/api/notes/:id", (request, response, next) => {
   const id = request.params.id;
-  Note.findById(id).then((noteFound) => response.json(noteFound));
+  Note.findById(id)
+    .then((noteFound) => {
+      if (noteFound) {
+        response.json(noteFound);
+      } else {
+        response.status(404).end();
+      }
+    })
+    .catch((error) => next(error));
 });
 
-app.delete("/api/notes/:id", (request, response) => {
+app.delete("/api/notes/:id", (request, response, next) => {
   const id = request.params.id;
-  Note.findByIdAndDelete(id).then((noteDeleted) => response.status(204).end());
+  Note.findByIdAndDelete(id)
+    .then((noteDeleted) => response.status(204).end())
+    .catch((error) => next(error));
 });
 
 app.post("/api/notes", (request, response) => {
@@ -54,11 +64,42 @@ app.post("/api/notes", (request, response) => {
   note.save().then((savedNote) => response.json(savedNote));
 });
 
+app.put("/api/notes/:id", (request, response, next) => {
+  const id = request.params.id;
+  const { content, important } = request.body;
+
+  Note.findById(id).then((noteFound) => {
+    if (!noteFound) {
+      return response.status(404).end();
+    }
+
+    note.content = content;
+    note.important = important;
+
+    return note
+      .save()
+      .then((updatedNote) => {
+        response.json(updatedNote);
+      })
+      .catch((error) => next(error));
+  });
+});
+
 const unknownEndpoint = (request, response) => {
   response.status(404).send({ error: "unknown endpoint" });
 };
 
 app.use(unknownEndpoint);
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message);
+  if (error.name === "CastError") {
+    return response.status(400).send({ error: "Malformatted id" });
+  }
+  next(error);
+};
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT;
 
