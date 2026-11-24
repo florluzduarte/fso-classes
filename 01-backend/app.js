@@ -7,10 +7,10 @@ const notesRouter = require('./controllers/notes');
 
 const app = express();
 
-logger.info('connecting to', config.MONGODB_URI);
+logger.info('connecting to', config.MONGO_URI);
 
 mongoose
-  .connect(config.MONGODB_URI, { family: 4 })
+  .connect(config.MONGO_URI, { family: 4 })
   .then(() => {
     logger.info('connected to MongoDB');
   })
